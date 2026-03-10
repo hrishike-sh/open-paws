@@ -1,10 +1,17 @@
-import express from "express"
+import express from "express";
+import helmet from "helmet";
+import { rateLimiter, authMiddleware } from "./middleware/auth.js";
 
-import PingRoute from "./routes/ping.routes.js"
+import PingRoute from "./routes/ping.routes.js";
+import AIRoutes from "./routes/ai.routes.js";
 
 const app = express();
 
-app.use(express.json())
-app.use("/ping", PingRoute)
+app.use(helmet());
+app.use(express.json());
+app.use(rateLimiter);
 
-export default app
+app.use("/ping", PingRoute);
+app.use("/ai", authMiddleware, AIRoutes);
+
+export default app;
