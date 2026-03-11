@@ -66,7 +66,8 @@ npm install
 
 ```bash
 cd backend
-npm run dev
+npm run build
+npm run start
 ```
 
 The server will start on `http://localhost:3000`. API Docs are at `http://localhost:3000/api-docs`.
