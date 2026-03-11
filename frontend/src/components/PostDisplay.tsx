@@ -1,39 +1,26 @@
 import React, { useState, useCallback, useEffect } from 'react';
-
-interface PostData {
-  twitter?: { variant_a: string; variant_b: string };
-  instagram?: {
-    variant_a: { visual_concept: string; caption: string };
-    variant_b: { visual_concept: string; caption: string };
-  };
-  email?: {
-    variant_a: { subject: string; preview: string; body: string };
-    variant_b: { subject: string; preview: string; body: string };
-  };
-  blog?: {
-    variant_a: { title: string; excerpt: string };
-    variant_b: { title: string; excerpt: string };
-  };
-  press_release?: {
-    variant_a: { headline: string; opening_paragraph: string };
-    variant_b: { headline: string; opening_paragraph: string };
-  };
-}
-
+import type { PostData, CampaignBrief } from '../App';
 
 interface PostDisplayProps {
   post: PostData;
+  bearerToken: string;
+  brief: CampaignBrief;
+  onContinue: (choices: { platform: string; variant: 'a' | 'b'; content: any }[]) => void;
 }
 
-const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
+const PostDisplay: React.FC<PostDisplayProps> = ({ post, bearerToken, brief, onContinue }) => {
   const [selectedPlatform, setSelectedPlatform] = useState(Object.keys(post)[0]);
   const [chosenVariants, setChosenVariants] = useState<{ [platform: string]: 'a' | 'b' }>({});
   const [copied, setCopied] = useState(false);
   const [editablePost, setEditablePost] = useState<PostData>(post);
+  const [aiPrompts, setAiPrompts] = useState<{ [key: string]: string }>({});
+  const [isAiLoading, setIsAiLoading] = useState<{ [key: string]: boolean }>({});
+  const [activeAiEditVariant, setActiveAiEditVariant] = useState<string | null>(null);
 
   useEffect(() => {
     setEditablePost(post);
     setSelectedPlatform(Object.keys(post)[0]);
+    setActiveAiEditVariant(null);
   }, [post]);
 
   const handleChoose = (platform: string, variant: 'a' | 'b') => {
@@ -71,28 +58,100 @@ const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
     });
   };
 
+  const handleAIEdit = async (platform: string, variant: 'a' | 'b', key: string | null, originalText: string) => {
+    const promptKey = `${platform}-${variant}-${key || 'default'}`;
+    const prompt = aiPrompts[promptKey];
+    if (!prompt) return;
+
+    setIsAiLoading(prev => ({ ...prev, [promptKey]: true }));
+
+    try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (bearerToken) {
+        headers['Authorization'] = `Bearer ${bearerToken}`;
+      }
+
+      const response = await fetch('/api/ai/edit', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ text: originalText, prompt, brief }),
+      });
+
+      if (!response.ok) throw new Error('Failed to edit with AI');
+
+      const result = await response.json();
+      if (result.text.success) {
+        handleContentChange(platform, variant, key, result.text.data);
+        setAiPrompts(prev => ({ ...prev, [promptKey]: '' }));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error editing with AI');
+    } finally {
+      setIsAiLoading(prev => ({ ...prev, [promptKey]: false }));
+    }
+  };
+
+  const toggleAiEditVariant = (platform: string, variant: 'a' | 'b') => {
+    const variantKey = `${platform}-${variant}`;
+    setActiveAiEditVariant(prev => prev === variantKey ? null : variantKey);
+  };
+
+  const handleContinueClick = () => {
+    const choices = Object.entries(chosenVariants).map(([platform, variant]) => {
+      const platformData = editablePost[platform as keyof PostData] as any;
+      const content = platformData[`variant_${variant}`];
+      return { platform, variant, content };
+    });
+    onContinue(choices);
+  };
+
   const renderContent = (platform: string, variant: 'a' | 'b', content: string | object) => {
-    if (typeof content === 'string') {
+    const renderEditableArea = (currentKey: string | null, currentValue: string) => {
+      const promptKey = `${platform}-${variant}-${currentKey || 'default'}`;
+      const isAiEditActive = activeAiEditVariant === `${platform}-${variant}`;
+
       return (
-        <textarea
-          className="editable-content"
-          value={content}
-          onChange={(e) => handleContentChange(platform, variant, null, e.target.value)}
-          rows={5}
-        />
+        <div className="editable-container">
+          <textarea
+            className="editable-content"
+            value={currentValue}
+            onChange={(e) => handleContentChange(platform, variant, currentKey, e.target.value)}
+            rows={currentKey ? 3 : 5}
+          />
+          {isAiEditActive && (
+            <div className="ai-edit-tools">
+              <input
+                type="text"
+                placeholder="Prompt to rephrase (e.g., 'make it funnier')"
+                value={aiPrompts[promptKey] || ''}
+                onChange={(e) => setAiPrompts(prev => ({ ...prev, [promptKey]: e.target.value }))}
+                autoFocus
+              />
+              <button
+                onClick={() => handleAIEdit(platform, variant, currentKey, currentValue)}
+                disabled={isAiLoading[promptKey] || !aiPrompts[promptKey]}
+                className="ai-edit-btn"
+              >
+                {isAiLoading[promptKey] ? 'Editing...' : 'Rephrase'}
+              </button>
+            </div>
+          )}
+        </div>
       );
+    };
+
+    if (typeof content === 'string') {
+      return renderEditableArea(null, content);
     }
     return (
       <>
         {Object.entries(content).map(([key, value]) => (
           <div key={key} className="content-item">
             <strong>{key.replace(/_/g, ' ')}</strong>
-            <textarea
-              className="editable-content"
-              value={value as string}
-              onChange={(e) => handleContentChange(platform, variant, key, e.target.value)}
-              rows={3}
-            />
+            {renderEditableArea(key, value as string)}
           </div>
         ))}
       </>
@@ -100,6 +159,7 @@ const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
   };
 
   const platformData = editablePost[selectedPlatform as keyof PostData];
+  const hasAnyChoice = Object.keys(chosenVariants).length > 0;
 
   return (
     <div className="post-display-redesigned">
@@ -107,10 +167,10 @@ const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
         {Object.keys(editablePost).map(platform => (
           <button
             key={platform}
-            className={`platform-button ${selectedPlatform === platform ? 'active' : ''}`}
+            className={`platform-button ${selectedPlatform === platform ? 'active' : ''} ${chosenVariants[platform] ? 'has-choice' : ''}`}
             onClick={() => setSelectedPlatform(platform)}
           >
-            {platform}
+            {platform} {chosenVariants[platform] && '✓'}
           </button>
         ))}
       </div>
@@ -124,6 +184,7 @@ const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
             onChoose={() => handleChoose(selectedPlatform, 'a')}
             onCopy={handleCopyToClipboard}
             renderContent={(content) => renderContent(selectedPlatform, 'a', content)}
+            onAiEdit={() => toggleAiEditVariant(selectedPlatform, 'a')}
             copied={copied && chosenVariants[selectedPlatform] === 'a'}
           />
           <VariantCard
@@ -133,10 +194,19 @@ const PostDisplay: React.FC<PostDisplayProps> = ({ post }) => {
             onChoose={() => handleChoose(selectedPlatform, 'b')}
             onCopy={handleCopyToClipboard}
             renderContent={(content) => renderContent(selectedPlatform, 'b', content)}
+            onAiEdit={() => toggleAiEditVariant(selectedPlatform, 'b')}
             copied={copied && chosenVariants[selectedPlatform] === 'b'}
           />
         </>}
       </div>
+
+      {hasAnyChoice && (
+        <div className="continue-section">
+          <button className="continue-btn" onClick={handleContinueClick}>
+            Continue to Summary ({Object.keys(chosenVariants).length} selected)
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -149,10 +219,11 @@ interface VariantCardProps {
   onChoose: () => void;
   onCopy: (content: string | object) => void;
   renderContent: (content: string | object) => React.ReactNode;
+  onAiEdit: () => void;
   copied: boolean;
 }
 
-const VariantCard: React.FC<VariantCardProps> = ({ variant, content, isChosen, onChoose, onCopy, renderContent, copied }) => {
+const VariantCard: React.FC<VariantCardProps> = ({ variant, content, isChosen, onChoose, onCopy, renderContent, onAiEdit, copied }) => {
   return (
     <div className={`variant-card-redesigned ${isChosen ? 'chosen' : ''}`}>
       <div className="variant-header">
@@ -164,6 +235,9 @@ const VariantCard: React.FC<VariantCardProps> = ({ variant, content, isChosen, o
       <div className="variant-actions">
         <button className="choose-btn" onClick={onChoose}>
           {isChosen ? '✓ Chosen' : 'Choose'}
+        </button>
+        <button className="pencil-btn" onClick={onAiEdit} title="Edit with AI">
+          ✎
         </button>
         {isChosen && (
           <button className="copy-btn" onClick={() => onCopy(content)}>

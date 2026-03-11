@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import './App.css';
 import PostDisplay from './components/PostDisplay';
+import Summary from './components/Summary';
 
-interface PostData {
+export interface PostData {
   twitter?: { variant_a: string; variant_b: string };
   instagram?: {
     variant_a: { visual_concept: string; caption: string };
@@ -22,6 +23,19 @@ interface PostData {
   };
 }
 
+export interface CampaignBrief {
+  topic: string;
+  tone: string;
+  target_audience: string;
+  key_stats: string;
+  cta: string;
+}
+
+interface Choice {
+  platform: string;
+  variant: 'a' | 'b';
+  content: any;
+}
 
 function App() {
   const [topic, setTopic] = useState('');
@@ -33,12 +47,23 @@ function App() {
   const [post, setPost] = useState<PostData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'form' | 'summary'>('form');
+  const [selectedChoices, setSelectedChoices] = useState<Choice[]>([]);
+
+  const currentBrief: CampaignBrief = {
+    topic,
+    tone,
+    target_audience: targetAudience,
+    key_stats: keyStats,
+    cta
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setPost(null);
     setError(null);
+    setSelectedChoices([]);
 
     try {
       const headers: HeadersInit = {
@@ -52,13 +77,7 @@ function App() {
       const response = await fetch('/api/ai/draft', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          topic,
-          tone,
-          target_audience: targetAudience,
-          key_stats: keyStats,
-          cta,
-        }),
+        body: JSON.stringify(currentBrief),
       });
 
       if (!response.ok) {
@@ -75,6 +94,22 @@ function App() {
       setIsLoading(false);
     }
   };
+
+  const handleContinue = (choices: Choice[]) => {
+    setSelectedChoices(choices);
+    setView('summary');
+  };
+
+  if (view === 'summary') {
+    return (
+      <div className="App">
+        <Summary 
+          choices={selectedChoices} 
+          onBack={() => setView('form')} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="App">
@@ -113,7 +148,14 @@ function App() {
           </button>
         </form>
         {error && <div className="error-message">{error}</div>}
-        {post && Object.keys(post).length > 0 && <PostDisplay post={post} />}
+        {post && Object.keys(post).length > 0 && (
+          <PostDisplay 
+            post={post} 
+            bearerToken={bearerToken} 
+            brief={currentBrief}
+            onContinue={handleContinue}
+          />
+        )}
       </main>
     </div>
   );

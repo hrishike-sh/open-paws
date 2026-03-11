@@ -1,25 +1,25 @@
 import { configDotenv } from "dotenv";
 import OpenAI from "openai";
 
-configDotenv()
+configDotenv();
 
 const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+	apiKey: process.env.OPENAI_API_KEY,
 });
 
 export type CampaignBrief = {
-    topic: string;
-    tone: string;
-    target_audience: string;
-    key_stats: string;
-    cta: string;
-}
+	topic: string;
+	tone: string;
+	target_audience: string;
+	key_stats: string;
+	cta: string;
+};
 
 export type ReturnType = {
-    success: boolean;
-    data?: any;
-    message?: string;
-}
+	success: boolean;
+	data?: any;
+	message?: string;
+};
 
 const PROMPT = `You are an expert campaign copywriter and digital strategist for an advocacy organization. Your task is to take a core campaign brief and generate highly optimized, platform-specific content variants for A/B testing.
 
@@ -47,34 +47,93 @@ Return the output STRICTLY as a JSON object matching this exact schema:
   }
 }`;
 
-export const DraftCampaign = async (brief: CampaignBrief): Promise<ReturnType> => {
-    try {
-        const response = await client.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: PROMPT },
-                { role: "user", content: JSON.stringify(brief) }
-            ],
-            response_format: { type: "json_object" }
-        });
+export const DraftCampaign = async (
+	brief: CampaignBrief,
+): Promise<ReturnType> => {
+	try {
+		const response = await client.chat.completions.create({
+			model: "gpt-4o-mini",
+			messages: [
+				{ role: "system", content: PROMPT },
+				{ role: "user", content: JSON.stringify(brief) },
+			],
+			response_format: { type: "json_object" },
+		});
 
-        const content = response.choices[0].message.content;
+		const content = response.choices[0].message.content;
 
-        if (!content) {
-            return {
-                success: false,
-                message: "Empty response from API"
-            };
-        }
+		if (!content) {
+			return {
+				success: false,
+				message: "Empty response from API",
+			};
+		}
 
-        return {
-            success: true,
-            data: JSON.parse(content)
-        };
-    } catch (error) {
-        return {
-            success: false,
-            message: (error as Error).message
-        };
-    }
-}
+		return {
+			success: true,
+
+			data: JSON.parse(content),
+		};
+	} catch (error) {
+		return {
+			success: false,
+
+			message: (error as Error).message,
+		};
+	}
+};
+
+export const EditContent = async (
+	text: string,
+	prompt: string,
+	brief: CampaignBrief,
+): Promise<ReturnType> => {
+	try {
+		const response = await client.chat.completions.create({
+			model: "gpt-4o-mini",
+
+			messages: [
+				{
+					role: "system",
+					content: `You are an expert copywriter. Rephrase the given text based on the user's instructions.
+                    
+                    Context from the original campaign brief:
+                    Topic: ${brief.topic}
+                    Tone: ${brief.tone}
+                    Target Audience: ${brief.target_audience}
+                    Key Stats: ${brief.key_stats}
+                    CTA: ${brief.cta}
+
+                    Return only the rephrased text.`,
+				},
+
+				{
+					role: "user",
+					content: `Original text: "${text}"\n\nInstructions: ${prompt}`,
+				},
+			],
+		});
+
+		const content = response.choices[0].message.content;
+
+		if (!content) {
+			return {
+				success: false,
+
+				message: "Empty response from API",
+			};
+		}
+
+		return {
+			success: true,
+
+			data: content.trim(),
+		};
+	} catch (error) {
+		return {
+			success: false,
+
+			message: (error as Error).message,
+		};
+	}
+};

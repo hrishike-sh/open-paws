@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { getDraft } from "../controllers/ai.controller.js";
+import { getDraft, editContent } from "../controllers/ai.controller.js";
 
 const router = Router();
 
 /**
  * @swagger
  * /ai/draft:
- *   get:
+ *   post:
  *     summary: Generate AI-driven campaign content drafts
  *     description: Receives a campaign brief and generates multiple platform-specific content variants using AI.
  *     security:
@@ -65,7 +65,41 @@ const router = Router();
  *       500:
  *         description: Internal Server Error.
  */
+router.post("/draft", getDraft);
 
-router.post("/draft", getDraft)
+/**
+ * @swagger
+ * /ai/edit:
+ *   post:
+ *     summary: Edit content with AI
+ *     description: Takes original text and a prompt to rephrase the text.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *               - prompt
+ *               - brief
+ *             properties:
+ *               text:
+ *                 type: string
+ *               prompt:
+ *                 type: string
+ *               brief:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Successfully edited content.
+ *       400:
+ *         description: Bad Request.
+ *       500:
+ *         description: Internal Server Error.
+ */
+router.post("/edit", editContent);
 
-export default router
+export default router;
