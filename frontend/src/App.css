@@ -1,0 +1,250 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.App {
+  text-align: left;
+}
+
+.App-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.App-header h1 {
+  font-size: 2.5em;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9em;
+  color: #bbb;
+}
+
+input[type="text"],
+input[type="password"] {
+  font-family: inherit;
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+button {
+  margin-top: 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+button:disabled {
+  background-color: #111;
+  color: #555;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff6b6b;
+  background-color: #2b0b0b;
+  border: 1px solid #ff6b6b;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* New Design Styles */
+.post-display-redesigned {
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.platform-selector {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.platform-button {
+  flex: 1;
+  margin: 0;
+  background-color: transparent;
+  color: #aaa;
+  border: none;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+  border-radius: 6px;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.platform-button.active {
+  background-color: #646cff;
+  color: #fff;
+}
+
+.variants-deck {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.variant-card-redesigned {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 2px solid transparent;
+}
+
+.variant-card-redesigned.chosen {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  border-color: #646cff;
+}
+
+.variant-header {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #eee;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #444;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.variant-content {
+  padding: 1rem;
+  flex-grow: 1;
+}
+
+.content-item strong {
+  display: block;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 0.25rem;
+  text-transform: capitalize;
+}
+
+.content-item p {
+  margin: 0 0 1rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #ddd;
+}
+
+.editable-content {
+  width: 100%;
+  background-color: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.editable-content:focus {
+  outline: none;
+  border-color: #646cff;
+  background-color: #3a3a3a;
+}
+
+.variant-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin-top: auto;
+  border-top: 1px solid #444;
+}
+
+.choose-btn, .copy-btn {
+  flex: 1;
+  margin: 0;
+  padding: 0.75rem;
+  font-weight: 600;
+}
+
+.choose-btn {
+  background-color: #444;
+  color: #fff;
+}
+
+.variant-card-redesigned.chosen .choose-btn {
+  background-color: #646cff;
+  color: #fff;
+}
+
+.copy-btn {
+  background-color: #555;
+  color: #fff;
+}

@@ -66,6 +66,6 @@ const router = Router();
  *         description: Internal Server Error.
  */
 
-router.get("/draft", getDraft)
+router.post("/draft", getDraft)
 
 export default router
